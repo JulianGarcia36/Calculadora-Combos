@@ -109,3 +109,6 @@ details.panel .panel-inner{padding:0 18px 18px;}
 .new-plat-form input[type=text],.new-plat-form input[type=number]{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;width:100%;}
 .new-plat-form .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .new-plat-form .grid5 label{font-size:9.5px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;display:block;margin-bottom:3px;}
+
+.search-input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:9px 10px;font-size:13px;margin-bottom:10px;}
+.danger-btn{color:var(--red) !important;border-color:rgba(255,107,107,.4) !important;}
