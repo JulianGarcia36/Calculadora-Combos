@@ -314,6 +314,8 @@ function renderPlatformList(){
   list.querySelectorAll('[data-remove]').forEach(btn => {
     btn.addEventListener('click', e => {
       const id = e.target.dataset.remove;
+      const item = platforms.find(x => x.id === id);
+      if(!confirm(`¿Eliminar "${item ? item.name : 'esta plataforma'}"? Esta acción no se puede deshacer.`)) return;
       platforms = platforms.filter(x => x.id !== id);
       delete selection[id];
       renderPlatformList();
@@ -403,7 +405,10 @@ function renderSavedCombos(){
   });
   el.querySelectorAll('[data-del-combo]').forEach(btn => {
     btn.addEventListener('click', e => {
-      savedCombos = savedCombos.filter(x => x.id !== e.target.dataset.delCombo);
+      const id = e.target.dataset.delCombo;
+      const combo = savedCombos.find(c => c.id === id);
+      if(!confirm(`¿Eliminar el combo guardado "${combo ? combo.name : ''}"?`)) return;
+      savedCombos = savedCombos.filter(x => x.id !== id);
       renderSavedCombos();
       persist();
     });
@@ -436,7 +441,9 @@ function renderHistory(){
   });
   el.querySelectorAll('[data-del-hist]').forEach(btn => {
     btn.addEventListener('click', e => {
-      history = history.filter(x => x.id !== e.target.dataset.delHist);
+      const id = e.target.dataset.delHist;
+      if(!confirm('¿Eliminar esta cotización del historial?')) return;
+      history = history.filter(x => x.id !== id);
       renderHistory();
       persist();
     });
