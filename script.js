@@ -26,6 +26,7 @@ let selection = {};      // id -> {selected, devices, editOpen}
 let promoPct = 0;
 let savedCombos = [];    // {id, name, selection, promoPct}
 let history = [];        // {id, ts, name, text}
+let searchTerm = '';
 
 function selEntry(id, qty){ return {[id]: {selected:true, devices:qty, editOpen:false}}; }
 function mergeSel(...entries){ return Object.assign({}, ...entries); }
@@ -121,6 +122,7 @@ function render(){
           <h1>Armar combo</h1>
           <p>Marca las plataformas, ajusta dispositivos y toca ✎ para editar cualquier precio.</p>
         </div>
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar plataforma..." value="${searchTerm}">
         <div id="platformList"></div>
       </div>
 
@@ -137,6 +139,17 @@ function render(){
         <summary><span class="eyebrow" style="margin-bottom:0;">+ Agregar plataforma nueva</span><span class="chev">▾</span></summary>
         <div class="panel-inner" id="newPlatForm"></div>
       </details>
+
+      <div class="panel">
+        <div class="section-label">Respaldo de datos</div>
+        <div class="footnote" style="margin-top:0;margin-bottom:10px;">Tus combos y precios se guardan solo en este navegador. Exporta un respaldo si vas a cambiar de dispositivo o navegador.</div>
+        <div class="btn-row" style="padding:0;flex-wrap:wrap;">
+          <button class="btn small" id="exportBtn">Exportar respaldo</button>
+          <button class="btn small secondary" id="importBtn">Importar respaldo</button>
+          <button class="btn small secondary danger-btn" id="resetAllBtn">Restablecer todo</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none;">
+      </div>
     </div>
 
     <div>
@@ -170,6 +183,11 @@ function render(){
   renderSavedCombos();
   renderHistory();
 
+  document.getElementById('searchInput').addEventListener('input', e => {
+    searchTerm = e.target.value;
+    renderPlatformList();
+  });
+
   document.getElementById('promoInput').addEventListener('input', e => {
     promoPct = parseFloat(e.target.value) || 0;
     renderTicket();
@@ -192,13 +210,29 @@ function render(){
     persist();
   });
 
+  document.getElementById('exportBtn').addEventListener('click', exportData);
+  document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', importData);
+  document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+
   renderTicket();
 }
 
 function renderPlatformList(){
   const list = document.getElementById('platformList');
   list.innerHTML = '';
-  platforms.forEach(p => {
+
+  const term = searchTerm.trim().toLowerCase();
+  const filtered = term
+    ? platforms.filter(p => p.name.toLowerCase().includes(term) || p.id.toLowerCase().includes(term))
+    : platforms;
+
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="empty-mini">No se encontraron plataformas con ese nombre.</div>';
+    return;
+  }
+
+  filtered.forEach(p => {
     const s = getSel(p.id);
     const wrap = document.createElement('div');
     wrap.className = 'item' + (s.selected ? ' checked' : '');
@@ -379,185 +413,3 @@ function renderSavedCombos(){
 function renderHistory(){
   const el = document.getElementById('historyList');
   if(history.length === 0){
-    el.innerHTML = '<div class="empty-mini">Las cotizaciones que copies quedarán aquí.</div>';
-    return;
-  }
-  el.innerHTML = history.map(h => `
-    <div class="list-row">
-      <div class="list-main">
-        <div class="list-title">${h.name}</div>
-        <div class="list-sub">${h.ts}</div>
-      </div>
-      <button class="btn small secondary" data-copy-hist="${h.id}">Copiar</button>
-      <button class="icon-btn danger" data-del-hist="${h.id}" title="Eliminar">✕</button>
-    </div>
-  `).join('');
-
-  el.querySelectorAll('[data-copy-hist]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      const h = history.find(x => x.id === e.target.dataset.copyHist);
-      if(!h) return;
-      navigator.clipboard.writeText(h.text).then(() => showToast());
-    });
-  });
-  el.querySelectorAll('[data-del-hist]').forEach(btn => {
-    btn.addEventListener('click', e => {
-      history = history.filter(x => x.id !== e.target.dataset.delHist);
-      renderHistory();
-      persist();
-    });
-  });
-}
-
-function showToast(){
-  const t = document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 1400);
-}
-
-function renderTicket(){
-  const items = selectedItems();
-  const nameEl = document.getElementById('ticketName');
-  const subEl = document.getElementById('ticketSub');
-  const bodyEl = document.getElementById('ticketBody');
-
-  if(items.length === 0){
-    nameEl.textContent = 'Selecciona al menos una plataforma';
-    subEl.textContent = '';
-    bodyEl.innerHTML = '<div class="empty-state">El combo aparecerá aquí con sus precios reales por duración.</div>';
-    return;
-  }
-
-  const durations = commonDurations(items);
-  const name = comboName(items);
-  nameEl.textContent = name;
-  const devices = deviceLabel(items);
-  subEl.textContent = promoPct > 0 ? `Promo activa: -${promoPct}%` : 'Sin promoción activa';
-
-  const totals = computeTotals(items, durations);
-  let rowsHtml = '';
-  durations.forEach(d => {
-    const base = totals[d];
-    const withPromo = promoPct > 0 ? round5(base * (1 - promoPct/100)) : base;
-    rowsHtml += `
-      <div class="row-line">
-        <div class="dur">${durLabel(d)}</div>
-        <div class="price-cell">
-          ${promoPct > 0 ? `<span class="orig">${fmt(base)}</span>` : ''}
-          <span class="final ${promoPct > 0 ? 'discounted' : ''}">${fmt(withPromo)}</span>
-        </div>
-      </div>`;
-  });
-
-  const copyText = buildCopyText(name, totals, durations, devices, items);
-
-  const qtys = items.map(it => getSel(it.id).devices || it.baseDevices);
-  const uniform = qtys.every(q => q === qtys[0]);
-  let tagHtml = '';
-  if(items.length === 1){
-    tagHtml = `<div class="devices-tag">${devices} ${deviceWord(items[0], devices)}</div>`;
-  } else if(uniform && qtys[0] === 1){
-    tagHtml = `<div class="devices-tag">1 Dispositivo</div>`;
-  }
-
-  bodyEl.innerHTML = `
-    ${rowsHtml}
-    ${tagHtml}
-    <div class="copy-block"><pre id="copyText">${copyText}</pre></div>
-    <div class="btn-row" style="padding-left:0;padding-right:0;">
-      <button class="btn" id="copyBtn">Copiar para enviar</button>
-      <button class="btn secondary" id="resetBtn">Limpiar combo</button>
-    </div>
-  `;
-
-  document.getElementById('copyBtn').addEventListener('click', () => {
-    navigator.clipboard.writeText(copyText).then(() => {
-      showToast();
-      history.unshift({id:'hist_'+Date.now(), ts:new Date().toLocaleString('es-CO'), name, text:copyText});
-      if(history.length > 20) history = history.slice(0,20);
-      renderHistory();
-      persist();
-    });
-  });
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    Object.keys(selection).forEach(k => selection[k].selected = false);
-    promoPct = 0;
-    render();
-    persist();
-  });
-}
-
-function buildCopyText(name, totals, durations, devices, items){
-  const lines = [];
-  lines.push(name);
-  if(promoPct > 0){
-    lines.push(`🔥 Precio con -${promoPct}% de descuento`);
-  }
-  durations.forEach(d => {
-    const base = totals[d];
-    const withPromo = promoPct > 0 ? round5(base * (1 - promoPct/100)) : base;
-    if(promoPct > 0){
-      lines.push(`- ${durLabel(d)}: ~${fmt(base)}~ ${fmt(withPromo)}`);
-    } else {
-      lines.push(`- ${durLabel(d)}: ${fmt(withPromo)}`);
-    }
-  });
-  const qtys = items.map(it => getSel(it.id).devices || it.baseDevices);
-  const uniform = qtys.every(q => q === qtys[0]);
-  if(items.length === 1){
-    lines.push(`${devices} ${deviceWord(items[0], devices)}`);
-  } else if(uniform && qtys[0] === 1){
-    lines.push('1 Dispositivo');
-  }
-  return lines.join('\n');
-}
-
-let storageWarned = false;
-function persist(){
-  try{
-    localStorage.setItem('platforms-state-v5', JSON.stringify({platforms, selection, promoPct, savedCombos, history}));
-  }catch(e){
-    console.error('No se pudo guardar', e);
-  }
-}
-
-function loadState(){
-  try{
-    const raw = localStorage.getItem('platforms-state-v5');
-    if(raw){
-      const data = JSON.parse(raw);
-      if(data.platforms){
-        platforms = data.platforms;
-        DEFAULT_PLATFORMS.forEach(def => {
-          if(!platforms.some(p => p.id === def.id)){
-            platforms.push(JSON.parse(JSON.stringify(def)));
-          }
-        });
-      }
-      if(data.selection) selection = data.selection;
-      if(typeof data.promoPct === 'number') promoPct = data.promoPct;
-      if(data.savedCombos) savedCombos = data.savedCombos;
-      if(data.history) history = data.history;
-    }
-  }catch(e){
-    /* sin estado guardado aún, o el navegador bloquea almacenamiento local */
-  }
-  const crunchyItem = platforms.find(p => p.id === 'crunchy');
-  if(crunchyItem) crunchyItem.table = {1:50,2:95,3:140,6:270,12:520};
-  const paramountItem = platforms.find(p => p.id === 'paramount');
-  if(paramountItem) paramountItem.table = {1:50,2:95,3:140,6:270,12:520};
-  SEED_COMBOS.forEach(seed => {
-    if(!savedCombos.some(c => c.name === seed.name)){
-      savedCombos.push({
-        id: 'combo_seed_' + Math.random().toString(36).slice(2,7),
-        name: seed.name,
-        selection: JSON.parse(JSON.stringify(seed.selection)),
-        promoPct: seed.promoPct
-      });
-    }
-  });
-  render();
-  persist();
-}
-
-loadState();
