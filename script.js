@@ -413,3 +413,233 @@ function renderSavedCombos(){
 function renderHistory(){
   const el = document.getElementById('historyList');
   if(history.length === 0){
+    el.innerHTML = '<div class="empty-mini">Las cotizaciones que copies quedarán aquí.</div>';
+    return;
+  }
+  el.innerHTML = history.map(h => `
+    <div class="list-row">
+      <div class="list-main">
+        <div class="list-title">${h.name}</div>
+        <div class="list-sub">${h.ts}</div>
+      </div>
+      <button class="btn small secondary" data-copy-hist="${h.id}">Copiar</button>
+      <button class="icon-btn danger" data-del-hist="${h.id}" title="Eliminar">✕</button>
+    </div>
+  `).join('');
+
+  el.querySelectorAll('[data-copy-hist]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const h = history.find(x => x.id === e.target.dataset.copyHist);
+      if(!h) return;
+      navigator.clipboard.writeText(h.text).then(() => showToast());
+    });
+  });
+  el.querySelectorAll('[data-del-hist]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      history = history.filter(x => x.id !== e.target.dataset.delHist);
+      renderHistory();
+      persist();
+    });
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg || 'Copiado ✓';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1400);
+}
+
+function renderTicket(){
+  const items = selectedItems();
+  const nameEl = document.getElementById('ticketName');
+  const subEl = document.getElementById('ticketSub');
+  const bodyEl = document.getElementById('ticketBody');
+
+  if(items.length === 0){
+    nameEl.textContent = 'Selecciona al menos una plataforma';
+    subEl.textContent = '';
+    bodyEl.innerHTML = '<div class="empty-state">El combo aparecerá aquí con sus precios reales por duración.</div>';
+    return;
+  }
+
+  const durations = commonDurations(items);
+  const name = comboName(items);
+  nameEl.textContent = name;
+  const devices = deviceLabel(items);
+  subEl.textContent = promoPct > 0 ? `Promo activa: -${promoPct}%` : 'Sin promoción activa';
+
+  const totals = computeTotals(items, durations);
+  let rowsHtml = '';
+  durations.forEach(d => {
+    const base = totals[d];
+    const withPromo = promoPct > 0 ? round5(base * (1 - promoPct/100)) : base;
+    rowsHtml += `
+      <div class="row-line">
+        <div class="dur">${durLabel(d)}</div>
+        <div class="price-cell">
+          ${promoPct > 0 ? `<span class="orig">${fmt(base)}</span>` : ''}
+          <span class="final ${promoPct > 0 ? 'discounted' : ''}">${fmt(withPromo)}</span>
+        </div>
+      </div>`;
+  });
+
+  const copyText = buildCopyText(name, totals, durations, devices, items);
+
+  const qtys = items.map(it => getSel(it.id).devices || it.baseDevices);
+  const uniform = qtys.every(q => q === qtys[0]);
+  let tagHtml = '';
+  if(items.length === 1){
+    tagHtml = `<div class="devices-tag">${devices} ${deviceWord(items[0], devices)}</div>`;
+  } else if(uniform && qtys[0] === 1){
+    tagHtml = `<div class="devices-tag">1 Dispositivo</div>`;
+  }
+
+  bodyEl.innerHTML = `
+    ${rowsHtml}
+    ${tagHtml}
+    <div class="copy-block"><pre id="copyText">${copyText}</pre></div>
+    <div class="btn-row" style="padding-left:0;padding-right:0;">
+      <button class="btn" id="copyBtn">Copiar para enviar</button>
+      <button class="btn secondary" id="resetBtn">Limpiar combo</button>
+    </div>
+  `;
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(copyText).then(() => {
+      showToast();
+      history.unshift({id:'hist_'+Date.now(), ts:new Date().toLocaleString('es-CO'), name, text:copyText});
+      if(history.length > 20) history = history.slice(0,20);
+      renderHistory();
+      persist();
+    });
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    Object.keys(selection).forEach(k => selection[k].selected = false);
+    promoPct = 0;
+    render();
+    persist();
+  });
+}
+
+function buildCopyText(name, totals, durations, devices, items){
+  const lines = [];
+  lines.push(name);
+  if(promoPct > 0){
+    lines.push(`🔥 Precio con -${promoPct}% de descuento`);
+  }
+  durations.forEach(d => {
+    const base = totals[d];
+    const withPromo = promoPct > 0 ? round5(base * (1 - promoPct/100)) : base;
+    if(promoPct > 0){
+      lines.push(`- ${durLabel(d)}: ~${fmt(base)}~ ${fmt(withPromo)}`);
+    } else {
+      lines.push(`- ${durLabel(d)}: ${fmt(withPromo)}`);
+    }
+  });
+  const qtys = items.map(it => getSel(it.id).devices || it.baseDevices);
+  const uniform = qtys.every(q => q === qtys[0]);
+  if(items.length === 1){
+    lines.push(`${devices} ${deviceWord(items[0], devices)}`);
+  } else if(uniform && qtys[0] === 1){
+    lines.push('1 Dispositivo');
+  }
+  return lines.join('\n');
+}
+
+function exportData(){
+  const data = {platforms, selection, promoPct, savedCombos, history};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'respaldo-combos-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Respaldo descargado ✓');
+}
+
+function importData(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(data.platforms) platforms = data.platforms;
+      if(data.selection) selection = data.selection;
+      if(typeof data.promoPct === 'number') promoPct = data.promoPct;
+      if(data.savedCombos) savedCombos = data.savedCombos;
+      if(data.history) history = data.history;
+      persist();
+      render();
+      showToast('Respaldo importado ✓');
+    }catch(err){
+      alert('El archivo no es un respaldo válido.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetAll(){
+  if(!confirm('¿Seguro que quieres borrar todos los datos guardados en este navegador? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem('platforms-state-v5');
+  platforms = JSON.parse(JSON.stringify(DEFAULT_PLATFORMS));
+  selection = {};
+  promoPct = 0;
+  savedCombos = [];
+  history = [];
+  loadState();
+}
+
+function persist(){
+  try{
+    localStorage.setItem('platforms-state-v5', JSON.stringify({platforms, selection, promoPct, savedCombos, history}));
+  }catch(e){
+    console.error('No se pudo guardar', e);
+  }
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('platforms-state-v5');
+    if(raw){
+      const data = JSON.parse(raw);
+      if(data.platforms){
+        platforms = data.platforms;
+        DEFAULT_PLATFORMS.forEach(def => {
+          if(!platforms.some(p => p.id === def.id)){
+            platforms.push(JSON.parse(JSON.stringify(def)));
+          }
+        });
+      }
+      if(data.selection) selection = data.selection;
+      if(typeof data.promoPct === 'number') promoPct = data.promoPct;
+      if(data.savedCombos) savedCombos = data.savedCombos;
+      if(data.history) history = data.history;
+    }
+  }catch(e){
+    /* sin estado guardado aún, o el navegador bloquea almacenamiento local */
+  }
+  const crunchyItem = platforms.find(p => p.id === 'crunchy');
+  if(crunchyItem) crunchyItem.table = {1:50,2:95,3:140,6:270,12:520};
+  const paramountItem = platforms.find(p => p.id === 'paramount');
+  if(paramountItem) paramountItem.table = {1:50,2:95,3:140,6:270,12:520};
+  SEED_COMBOS.forEach(seed => {
+    if(!savedCombos.some(c => c.name === seed.name)){
+      savedCombos.push({
+        id: 'combo_seed_' + Math.random().toString(36).slice(2,7),
+        name: seed.name,
+        selection: JSON.parse(JSON.stringify(seed.selection)),
+        promoPct: seed.promoPct
+      });
+    }
+  });
+  render();
+  persist();
+}
+
+loadState();
