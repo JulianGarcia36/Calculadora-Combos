@@ -10,7 +10,7 @@ const DEFAULT_PLATFORMS = [
   {id:'paramount',  name:'P₳R₳MØ∪N₮✚',                  baseDevices:1, table:{1:50,2:95,3:140,6:270,12:520}},
   {id:'vix',        name:'V!X PREMIUM',                 baseDevices:1, table:{1:50,2:95,3:140,6:270,12:520}},
   {id:'universal',  name:'∪N!V€R$₳Ⱡ',                   baseDevices:1, table:{1:50,2:95,3:140,6:270,12:520}},
-  {id:'youtube',    name:'¥Ø∪₮∪฿€ PREMIUM',             baseDevices:1, table:{1:65,2:120,3:180,6:360,12:710}},
+  {id:'youtube',    name:'¥Ø∪₮∪฿€ PREMIUM',             baseDevices:1, table:{1:65}, badge:'SOLO 1 MES'},
   {id:'disney',     name:'D1sn3y✚',                     baseDevices:1, table:{1:70,2:130,3:190,6:380,12:740}},
   {id:'disneyespn', name:'D1sn3y✚ + 3SPN',               baseDevices:1, table:{1:90,2:170,3:245,6:490,12:950}},
   {id:'netflix',    name:'N3T₣L!X PREMIUM',             baseDevices:1, table:{1:75,2:140,3:200,6:390,12:760}},
