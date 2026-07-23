@@ -635,6 +635,13 @@ function loadState(){
   if(crunchyItem) crunchyItem.table = {1:50,2:95,3:140,6:270,12:520};
   const paramountItem = platforms.find(p => p.id === 'paramount');
   if(paramountItem) paramountItem.table = {1:50,2:95,3:140,6:270,12:520};
+  // Correccion: YouTube Premium ahora solo se ofrece por 1 mes.
+  // Se aplica siempre, incluso si el navegador ya tenia guardadas las duraciones viejas.
+  const youtubeItem = platforms.find(p => p.id === 'youtube');
+  if(youtubeItem){
+    youtubeItem.table = {1:65};
+    youtubeItem.badge = 'SOLO 1 MES';
+  }
   SEED_COMBOS.forEach(seed => {
     if(!savedCombos.some(c => c.name === seed.name)){
       savedCombos.push({
