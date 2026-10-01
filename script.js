@@ -635,6 +635,10 @@ function loadState(){
   if(crunchyItem) crunchyItem.table = {1:50,2:95,3:140,6:270,12:520};
   const paramountItem = platforms.find(p => p.id === 'paramount');
   if(paramountItem) paramountItem.table = {1:50,2:95,3:140,6:270,12:520};
+  // Actualizacion de precios de Netflix (antes 75 el mes).
+  // Se aplica siempre, incluso si el navegador ya tenia guardados los precios viejos.
+  const netflixItem = platforms.find(p => p.id === 'netflix');
+  if(netflixItem) netflixItem.table = {1:80,2:150,3:215,6:415,12:810};
   // Correccion: YouTube Premium ahora solo se ofrece por 1 mes.
   // Se aplica siempre, incluso si el navegador ya tenia guardadas las duraciones viejas.
   const youtubeItem = platforms.find(p => p.id === 'youtube');
