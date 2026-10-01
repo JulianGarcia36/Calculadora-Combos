@@ -16,7 +16,7 @@ const DEFAULT_PLATFORMS = [
   {id:'netflix',    name:'N3T₣L!X PREMIUM',             baseDevices:1, table:{1:80,2:150,3:215,6:415,12:810}},
   {id:'gemini',     name:'₲€₥!₦!',                      baseDevices:1, table:{1:120,2:230,3:340,6:670,12:1300}, badge:'SE ACTIVA CON TU CORREO'},
   {id:'canva',      name:'C₳NV₳',                       baseDevices:1, table:{1:70,2:130,3:190,6:380,12:740}},
-  {id:'spotify',    name:'$P0T!₣¥ Premium',             baseDevices:1, table:{1:75,2:125,3:160,6:300,12:580}},
+  {id:'spotify',    name:'$P0T!₣¥ Premium',             baseDevices:1, table:{1:80,2:135,3:175,6:330,12:640}},
   {id:'appletv',    name:'₳₱₱ⱠɆ ₮V',                    baseDevices:1, table:{1:60,2:110,3:165,6:330,12:600}},
   {id:'magis',      name:'MΔG!$ ₸V (₣L∪JØ ₸V)',         baseDevices:1, table:{1:120,2:230,3:340,6:670,12:1300}, badge:'POR ENCARGO'},
 ];
@@ -639,6 +639,9 @@ function loadState(){
   // Se aplica siempre, incluso si el navegador ya tenia guardados los precios viejos.
   const netflixItem = platforms.find(p => p.id === 'netflix');
   if(netflixItem) netflixItem.table = {1:80,2:150,3:215,6:415,12:810};
+  // Actualizacion de precios de Spotify (antes 75/125/160/300/580).
+  const spotifyItem = platforms.find(p => p.id === 'spotify');
+  if(spotifyItem) spotifyItem.table = {1:80,2:135,3:175,6:330,12:640};
   // Correccion: YouTube Premium ahora solo se ofrece por 1 mes.
   // Se aplica siempre, incluso si el navegador ya tenia guardadas las duraciones viejas.
   const youtubeItem = platforms.find(p => p.id === 'youtube');
