@@ -13,7 +13,7 @@ const DEFAULT_PLATFORMS = [
   {id:'youtube',    name:'¥Ø∪₮∪฿€ PREMIUM',             baseDevices:1, table:{1:65}, badge:'SOLO 1 MES'},
   {id:'disney',     name:'D1sn3y✚',                     baseDevices:1, table:{1:70,2:130,3:190,6:380,12:740}},
   {id:'disneyespn', name:'D1sn3y✚ + 3SPN',               baseDevices:1, table:{1:90,2:170,3:245,6:490,12:950}},
-  {id:'netflix',    name:'N3T₣L!X PREMIUM',             baseDevices:1, table:{1:75,2:140,3:200,6:390,12:760}},
+  {id:'netflix',    name:'N3T₣L!X PREMIUM',             baseDevices:1, table:{1:80,2:150,3:215,6:415,12:810}},
   {id:'gemini',     name:'₲€₥!₦!',                      baseDevices:1, table:{1:120,2:230,3:340,6:670,12:1300}, badge:'SE ACTIVA CON TU CORREO'},
   {id:'canva',      name:'C₳NV₳',                       baseDevices:1, table:{1:70,2:130,3:190,6:380,12:740}},
   {id:'spotify',    name:'$P0T!₣¥ Premium',             baseDevices:1, table:{1:75,2:125,3:160,6:300,12:580}},
