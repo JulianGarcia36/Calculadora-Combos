@@ -9,7 +9,7 @@ import { copyText } from '../adapters/clipboard.js';
 import { buildBackup, downloadJson, localDate, parseBackup } from '../adapters/backup.js';
 import { html, setHTML } from './html.js';
 
-export function createApp({ win, root, catalog, storage, version, legacyUrl = null, now = () => new Date() }) {
+export function createApp({ win, root, catalog, storage, version, legacyUrl = null, moveTo = null, now = () => new Date() }) {
   const doc = win.document;
   const P = catalog.platforms;
   const MAX = catalog.maxDiscountPct;
@@ -462,6 +462,13 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
   // ---------- Inicio ----------
   layout();
   load();
+  if (moveTo) {
+    addNotice({
+      id: 'mudanza', kind: 'warn', title: 'La calculadora cambió de dirección',
+      body: html`Para llevar tus combos e historial: <strong>1.</strong> pulsa «Exportar respaldo» aquí; <strong>2.</strong> abre <a href="${moveTo}" target="_blank" rel="noopener">${moveTo}</a> y entra con la clave; <strong>3.</strong> allá pulsa «Importar respaldo» y elige el archivo descargado.`,
+      actions: [{ id: 'export', label: 'Exportar respaldo' }]
+    });
+  }
   root.addEventListener('click', onClick);
   root.addEventListener('change', onChange);
   root.addEventListener('input', onInput);

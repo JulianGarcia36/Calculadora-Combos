@@ -297,3 +297,13 @@ test('exportar genera un respaldo v6 que se vuelve a importar igual', () => {
     assert.equal(copyTextOf(other), copyTextOf(env));
   });
 });
+
+test('mudanza: en la dirección antigua se explica cómo llevar los datos a la nueva', () => {
+  // bootV6 no pasa moveTo: sin aviso.
+  assert.equal(bootV6().doc.querySelector('[data-notice="mudanza"]'), null);
+  const env = bootV6({}, { moveTo: 'https://calculadora-combos.pages.dev/' });
+  const n = env.doc.querySelector('[data-notice="mudanza"]');
+  assert.match(n.textContent, /Exportar respaldo/);
+  assert.equal(n.querySelector('a').getAttribute('href'), 'https://calculadora-combos.pages.dev/');
+  assert.ok(n.querySelector('[data-act="export"]'));
+});

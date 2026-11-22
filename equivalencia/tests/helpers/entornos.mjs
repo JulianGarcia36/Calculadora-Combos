@@ -27,14 +27,14 @@ function loadStore(win, store) { for (const [k, v] of Object.entries(store)) win
 export function dumpStore(win) { const out = {}; for (let i = 0; i < win.localStorage.length; i++) { const k = win.localStorage.key(i); out[k] = win.localStorage.getItem(k); } return out; }
 
 /** Arranca la versión 6. clipboard: 'api' | 'exec-ok' | 'none' */
-export function bootV6(store = {}, { clipboard = 'api', now, cat = testCatalog } = {}) {
+export function bootV6(store = {}, { clipboard = 'api', now, cat = testCatalog, moveTo = null } = {}) {
   const dom = newDom();
   const win = dom.window;
   loadStore(win, store);
   win.__clip = null;
   if (clipboard === 'api') Object.defineProperty(win.navigator, 'clipboard', { value: { writeText: t => { win.__clip = t; return Promise.resolve(); } }, configurable: true });
   win.document.execCommand = cmd => clipboard === 'exec-ok' && cmd === 'copy';
-  const app = createApp({ win, root: win.document.getElementById('app'), catalog: cat, storage: createStorage(win), version: 'prueba', legacyUrl: 'legacy/', now });
+  const app = createApp({ win, root: win.document.getElementById('app'), catalog: cat, storage: createStorage(win), version: 'prueba', legacyUrl: 'legacy/', moveTo, now });
   return { win, doc: win.document, app, store: () => dumpStore(win) };
 }
 
