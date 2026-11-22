@@ -3,28 +3,6 @@
   "catalogVersion": "2026.11.22-1",
   "updatedAt": "2026-11-22",
   "maxDiscountPct": 25,
-  "discountTiers": [
-    {
-      "minPlatforms": 2,
-      "pct": 5
-    },
-    {
-      "minPlatforms": 3,
-      "pct": 10
-    },
-    {
-      "minPlatforms": 4,
-      "pct": 15
-    },
-    {
-      "minPlatforms": 5,
-      "pct": 20
-    },
-    {
-      "minPlatforms": 6,
-      "pct": 25
-    }
-  ],
   "platforms": [
     {
       "id": "crunchy",

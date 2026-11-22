@@ -1,15 +1,6 @@
-// Reglas de descuento definidas por el negocio (DEC-02 y DEC-03, 22 nov 2026).
-// El vendedor escribe el porcentaje; la calculadora sugiere el tramo y aplica un tope.
+// Reglas de descuento definidas por el negocio (DEC-03, 22 nov 2026).
+// El vendedor escribe el porcentaje, como en la versión 5; el único cambio es el tope máximo.
 // La fórmula del descuento (BR-06) vive en pricing.js y NO se modifica aquí.
-
-/** Porcentaje sugerido según cuántas plataformas hay marcadas (0 si no aplica ningún tramo). */
-export function suggestedDiscount(tiers, platformCount) {
-  let pct = 0;
-  for (const t of tiers || []) {
-    if (platformCount >= t.minPlatforms && t.pct > pct) pct = t.pct;
-  }
-  return pct;
-}
 
 /**
  * Valida lo que el vendedor escribe en el campo de descuento.

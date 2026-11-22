@@ -1,7 +1,7 @@
 // Interfaz de la versión 6. Recibe todo por parámetro (ventana, catálogo, almacenamiento)
 // para poder probarse en jsdom igual que en el navegador.
 import * as pricing from '../domain/pricing.js';
-import { suggestedDiscount, validatePromo } from '../domain/discounts.js';
+import { validatePromo } from '../domain/discounts.js';
 import { emptyState, normalizeState, toV5Compatible, fingerprint, newId, MAX_HISTORY, MAX_DEVICES } from '../state/schema.js';
 import { migrateV5, reportHasNews } from '../state/migrate.js';
 import { KEY_V6, KEY_V5 } from '../adapters/storage.js';
@@ -94,7 +94,6 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
 
   // ---------- Datos derivados ----------
   const sel = id => state.selection[id] || (state.selection[id] = { selected: false, devices: P.find(p => p.id === id).baseDevices });
-  const selectedCount = () => P.filter(p => state.selection[p.id] && state.selection[p.id].selected).length;
   const currentQuote = () => pricing.quote(P, state.selection, state.promo.pct);
 
   function devicesTag(items) {
@@ -108,7 +107,6 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
 
   // ---------- Estructura fija ----------
   function layout() {
-    const tiers = catalog.discountTiers.map(t => `${t.minPlatforms}${t === catalog.discountTiers[catalog.discountTiers.length - 1] ? ' o más' : ''} = ${t.pct} %`).join(' · ');
     setHTML(root, html`
       <div class="notices" id="notices" aria-live="polite"></div>
       <div>
@@ -124,14 +122,13 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
         </div>
 
         <div class="panel">
-          <div class="section-label">Descuento</div>
+          <div class="section-label">Promoción del día</div>
           <div class="promo-row">
             <label for="promoInput">Descuento extra</label>
             <input type="number" id="promoInput" min="0" max="${MAX}" step="any" inputmode="decimal" aria-describedby="promoError promoHelp"> <span class="muted-pct">%</span>
           </div>
           <div class="field-error" id="promoError" role="alert"></div>
-          <div class="promo-hint" id="promoHint"></div>
-          <div class="footnote" id="promoHelp">Se aplica sobre el total de cada duración. Máximo ${MAX} %. Tramos por plataformas marcadas: ${tiers}.</div>
+          <div class="footnote" id="promoHelp">Se aplica sobre el total ya calculado de cada duración, solo para esta cotización.</div>
         </div>
 
         <div class="panel">
@@ -152,7 +149,6 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
             <div class="eyebrow">Cotización</div>
             <div class="ticket-name" id="ticketName"></div>
             <div class="ticket-sub" id="ticketSub"></div>
-            <div class="promo-banner" id="promoBanner"></div>
           </div>
           <div class="ticket-body" id="ticketBody"></div>
         </div>
@@ -222,17 +218,6 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
   function renderPromo() {
     const input = doc.getElementById('promoInput');
     if (doc.activeElement !== input) input.value = state.promo.pct ? String(state.promo.pct) : '0';
-    const count = selectedCount();
-    const sug = suggestedDiscount(catalog.discountTiers, count);
-    const hint = doc.getElementById('promoHint');
-    if (sug > 0 && sug !== state.promo.pct) setHTML(hint, html`<span>Tramo sugerido para ${count} plataformas: <strong>${sug} %</strong></span><button class="btn small secondary" data-act="apply-tier" data-pct="${sug}">Aplicar ${sug} %</button>`);
-    else setHTML(hint, html``);
-    const banner = doc.getElementById('promoBanner');
-    if (state.promo.pct > 0) {
-      const since = state.promo.setAt ? new Date(state.promo.setAt) : null;
-      const sinceTxt = since && !Number.isNaN(since.getTime()) ? since.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' }) : '';
-      setHTML(banner, html`<span>Descuento activo: <strong>${state.promo.pct} %</strong>${sinceTxt ? ` desde el ${sinceTxt}` : ''}</span><button class="btn small secondary" data-act="clear-promo">Quitar descuento</button>`);
-    } else setHTML(banner, html``);
   }
 
   function renderTicket() {
@@ -327,8 +312,6 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
         afterChange(); break;
       }
       case 'prices': openPrices.has(id) ? openPrices.delete(id) : openPrices.add(id); renderList(); break;
-      case 'apply-tier': setPromo(Number(t.dataset.pct)); doc.getElementById('promoError').textContent = ''; doc.getElementById('promoInput').removeAttribute('aria-invalid'); afterChange(); break;
-      case 'clear-promo': setPromo(0); afterChange(); break;
       case 'copy': {
         e.preventDefault();
         const q = currentQuote();

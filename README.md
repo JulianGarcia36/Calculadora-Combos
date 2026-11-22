@@ -14,14 +14,14 @@ La versión 6 trae automáticamente los datos de la versión 5 la primera vez qu
 
 ## Reglas comerciales (decididas el 22 nov 2026)
 - Los precios los define solo el administrador en `catalog/catalog.json` (los vendedores no pueden editarlos).
-- El vendedor escribe el descuento; máximo **25 %**. Tramos sugeridos: 2 plataformas 5 %, 3 = 10 %, 4 = 15 %, 5 = 20 %, 6 o más = 25 %.
+- El vendedor escribe el descuento a mano, igual que en la versión 5; máximo **25 %**.
 - El redondeo al múltiplo de 5 y el texto para el cliente son idénticos a la versión 5 (probado contra miles de casos).
 
 ## Cómo cambiar un precio
 1. Crea una rama y edita solo `catalog/catalog.json`: el precio, y súbele `catalogVersion` (por ejemplo `2026.12.01-1`) y `updatedAt`.
 2. Abre un pull request. En **Checks → Pruebas de precios → Summary** aparece el **Informe de precios** con lo que cambia. Si es lo que querías, haz merge.
 
-Si cambias un precio sin subir `catalogVersion`, las pruebas fallan y te lo dicen. Los tramos de descuento y el máximo de 25 % también están en `catalog.json`, pero cambiarlos exige actualizar la prueba que los fija (es una decisión de negocio).
+Si cambias un precio sin subir `catalogVersion`, las pruebas fallan y te lo dicen. El máximo de 25 % también está en `catalog.json` (`maxDiscountPct`); cambiarlo exige actualizar la prueba que lo fija.
 
 ## Acceso privado (Cloudflare Pages)
 El sitio se publica en Cloudflare Pages con **una sola clave compartida** para todos los vendedores (no se les pide correo). La pide `functions/_middleware.js` antes de entregar cualquier archivo, incluido el catálogo de precios.
@@ -45,7 +45,7 @@ Combos guardados e historial se guardan solo en el navegador de cada persona. Us
 - `src/state/` — formato de los datos y migración desde la versión 5
 - `src/adapters/` — almacenamiento, portapapeles y respaldos
 - `src/ui/` — pantalla (todo el texto se escapa: sin riesgo de inyección de HTML)
-- `catalog/catalog.json` — catálogo oficial de precios, tramos y descuento máximo
+- `catalog/catalog.json` — catálogo oficial de precios y descuento máximo
 - `assets/app.css` — estilos de la versión 6
 - `equivalencia/` — pruebas automáticas (ver su README)
 - `robots.txt` — evita que buscadores indexen el sitio

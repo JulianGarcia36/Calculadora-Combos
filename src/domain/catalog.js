@@ -6,8 +6,8 @@ export function validateCatalog(cat) {
   if (!cat || typeof cat !== 'object') return { ok: false, errors: ['El catálogo no es un objeto.'] };
   if (typeof cat.catalogVersion !== 'string' || !cat.catalogVersion) errors.push('Falta catalogVersion.');
   if (!(typeof cat.maxDiscountPct === 'number' && cat.maxDiscountPct >= 0 && cat.maxDiscountPct <= 100)) errors.push('maxDiscountPct debe estar entre 0 y 100.');
-  if (!Array.isArray(cat.discountTiers)) errors.push('discountTiers debe ser una lista.');
-  else cat.discountTiers.forEach((t, i) => {
+  if (cat.discountTiers !== undefined && !Array.isArray(cat.discountTiers)) errors.push('discountTiers debe ser una lista.');
+  else (cat.discountTiers || []).forEach((t, i) => {
     if (!Number.isInteger(t.minPlatforms) || t.minPlatforms < 1) errors.push(`Tramo ${i + 1}: minPlatforms inválido.`);
     if (!(typeof t.pct === 'number' && t.pct >= 0 && t.pct <= cat.maxDiscountPct)) errors.push(`Tramo ${i + 1}: pct debe estar entre 0 y maxDiscountPct.`);
   });
