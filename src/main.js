@@ -3,7 +3,7 @@ import { createApp } from './ui/app.js';
 import { createStorage } from './adapters/storage.js';
 import { validateCatalog } from './domain/catalog.js';
 
-export const VERSION = '6.1.1';
+export const VERSION = '6.2.0';
 
 function showFatal(root, title, lines) {
   root.textContent = '';
@@ -43,7 +43,9 @@ async function start() {
     const cfg = await (await fetch(new URL('../config/sitio.json', import.meta.url), { cache: 'no-cache' })).json();
     if (location.hostname.endsWith('github.io') && typeof cfg.direccionNueva === 'string' && /^https:\/\//.test(cfg.direccionNueva)) moveTo = cfg.direccionNueva;
   } catch { /* sin configuración: no hay mudanza */ }
-  createApp({ win: window, root, catalog, storage: createStorage(window), version: VERSION, legacyUrl, moveTo });
+  // "Salir" solo existe donde hay acceso con clave (Cloudflare), no en github.io.
+  const logoutUrl = location.hostname.endsWith('github.io') || location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? null : '/salir';
+  createApp({ win: window, root, catalog, storage: createStorage(window), version: VERSION, legacyUrl, moveTo, logoutUrl });
 }
 
 start();

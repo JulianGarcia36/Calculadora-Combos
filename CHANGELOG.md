@@ -1,5 +1,13 @@
 # Cambios
 
+## 6.2.0 — 22 nov 2026 — Rediseño «Arcaverse Combo Studio»
+- Nueva apariencia: modo noche por defecto y botón para cambiar a modo día (la elección se recuerda en cada navegador).
+- Escritorio: menú lateral (Calculadora, Combos guardados, Historial, Datos) y calculadora en dos columnas (plataformas 60 % · resumen 40 %).
+- Móvil: el total queda fijo abajo y se despliega el resumen completo; menú en pestañas.
+- Tarjetas de plataforma con dispositivos en la misma tarjeta; se puede destacar una duración en el resumen (solo visual: el mensaje sigue llevando todas).
+- Sin cambios en precios, redondeo, duraciones, dispositivos, descuento ni en el texto que recibe el cliente (4.000 cotizaciones comparadas contra la 6.1.1: 0 diferencias).
+- Las tarjetas se redibujan solo cuando cambian: la pantalla responde más rápido.
+
 ## 6.1.1 — 22 nov 2026
 - El descuento vuelve a funcionar como en la versión 5: sección «Promoción del día», el vendedor lo escribe a mano.
 - Se quitan los tramos sugeridos, su texto explicativo y la franja de «Descuento activo». Se mantiene el máximo de 25 %.

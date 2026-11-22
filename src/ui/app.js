@@ -8,8 +8,9 @@ import { KEY_V6, KEY_V5 } from '../adapters/storage.js';
 import { copyText } from '../adapters/clipboard.js';
 import { buildBackup, downloadJson, localDate, parseBackup } from '../adapters/backup.js';
 import { html, setHTML } from './html.js';
+import { Icon, PlatformCard, PriceChip, DurationRow, TotalHighlight, Notification, ListRow } from './components.js';
 
-export function createApp({ win, root, catalog, storage, version, legacyUrl = null, moveTo = null, now = () => new Date() }) {
+export function createApp({ win, root, catalog, storage, version, legacyUrl = null, moveTo = null, logoutUrl = null, now = () => new Date() }) {
   const doc = win.document;
   const P = catalog.platforms;
   const MAX = catalog.maxDiscountPct;
@@ -18,6 +19,11 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
   let search = '';
   const openPrices = new Set();
   let lastCopyFailed = false;
+  // Estado solo visual (no se guarda con los datos de cotización).
+  let view = 'calc';             // calc | combos | historial | datos
+  let highlight = null;          // duración destacada como "Total a pagar"
+  let sheetOpen = false;         // resumen desplegado en móvil
+  let theme = storage.readTheme ? (storage.readTheme() || 'dark') : 'dark';
 
   // ---------- Persistencia ----------
   function persist() {
@@ -106,113 +112,182 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
   }
 
   // ---------- Estructura fija ----------
+  function applyTheme() {
+    doc.documentElement.dataset.theme = theme;
+    const btn = doc.getElementById('themeToggle');
+    if (!btn) return;
+    const dark = theme === 'dark';
+    btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    btn.setAttribute('aria-label', dark ? 'Cambiar a modo día' : 'Cambiar a modo noche');
+    setHTML(btn, html`${dark ? Icon.sun() : Icon.moon()}<span class="theme-text">${dark ? 'Modo día' : 'Modo noche'}</span>`);
+  }
+
+  const NAV = [
+    { id: 'calc', label: 'Calculadora', icon: Icon.calc },
+    { id: 'combos', label: 'Combos guardados', icon: Icon.bookmark, count: () => state.savedCombos.length },
+    { id: 'historial', label: 'Historial', icon: Icon.clock, count: () => state.history.length },
+    { id: 'datos', label: 'Datos y respaldo', icon: Icon.download }
+  ];
+
   function layout() {
     setHTML(root, html`
-      <div class="notices" id="notices" aria-live="polite"></div>
-      <div>
-        <div class="panel">
-          <div class="header">
-            <div class="eyebrow">Catálogo</div>
-            <h1>Armar combo</h1>
-            <p>Marca las plataformas y ajusta los dispositivos. Los precios los define el administrador.</p>
-          </div>
-          <label class="sr-only" for="searchInput">Buscar plataforma</label>
-          <input type="text" id="searchInput" class="search-input" placeholder="Buscar plataforma..." autocomplete="off">
-          <div id="platformList"></div>
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">A</div>
+          <div class="brand-text"><div class="brand-name">ARCAVERSE</div><div class="brand-sub">COMBO STUDIO</div></div>
         </div>
-
-        <div class="panel">
-          <div class="section-label">Promoción del día</div>
-          <div class="promo-row">
-            <label for="promoInput">Descuento extra</label>
-            <input type="number" id="promoInput" min="0" max="${MAX}" step="any" inputmode="decimal" aria-describedby="promoError promoHelp"> <span class="muted-pct">%</span>
-          </div>
-          <div class="field-error" id="promoError" role="alert"></div>
-          <div class="footnote" id="promoHelp">Se aplica sobre el total ya calculado de cada duración, solo para esta cotización.</div>
+        <div class="topbar-actions">
+          <button type="button" class="pill-btn" id="themeToggle" data-act="theme"></button>
+          <div class="user-chip"><span class="user-avatar">${Icon.user()}</span><span>Vendedor</span></div>
+          ${logoutUrl ? html`<a class="ghost-link" href="${logoutUrl}">${Icon.logout()}<span>Salir</span></a>` : ''}
         </div>
+      </header>
 
-        <div class="panel">
-          <div class="section-label">Respaldo de datos</div>
-          <div class="footnote">Tus combos e historial se guardan solo en este navegador. Exporta un respaldo si vas a cambiar de dispositivo o navegador.</div>
-          <div class="btn-row">
-            <button class="btn small" data-act="export">Exportar respaldo</button>
-            <button class="btn small secondary" data-act="import">Importar respaldo</button>
-            <button class="btn small secondary danger-btn" data-act="reset-all">Restablecer todo</button>
-          </div>
-          <input type="file" id="importFile" accept=".json,application/json" class="hidden-input">
-        </div>
-      </div>
+      <div class="shell">
+        <nav class="sidenav" aria-label="Secciones" id="sidenav"></nav>
 
-      <div>
-        <div class="ticket">
-          <div class="ticket-top">
-            <div class="eyebrow">Cotización</div>
-            <div class="ticket-name" id="ticketName"></div>
-            <div class="ticket-sub" id="ticketSub"></div>
-          </div>
-          <div class="ticket-body" id="ticketBody"></div>
-        </div>
+        <main class="workspace">
+          <div class="notices" id="notices" aria-live="polite"></div>
 
-        <div class="panel">
-          <div class="section-label">Combos guardados</div>
-          <div class="save-row">
-            <label class="sr-only" for="saveComboName">Nombre del combo</label>
-            <input type="text" id="saveComboName" placeholder="Nombre para el combo actual...">
-            <button class="btn small" data-act="save-combo">Guardar</button>
-          </div>
-          <div class="field-error" id="saveComboError" role="alert"></div>
-          <div id="savedCombosList"></div>
-        </div>
+          <section class="view" id="view-calc">
+            <div class="page-head"><h1>Crear combo</h1><p>Marca las plataformas, ajusta dispositivos y copia la cotización.</p></div>
+            <div class="calc-grid">
+              <div class="calc-config">
+                <section class="panel">
+                  <div class="panel-head"><h2>01. Plataformas</h2><span class="count-chip" id="selCount"></span></div>
+                  <label class="search-field" for="searchInput">
+                    ${Icon.search()}
+                    <span class="sr-only">Buscar plataforma</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar plataforma..." autocomplete="off">
+                  </label>
+                  <div id="platformList" class="pgrid"></div>
+                </section>
 
-        <div class="panel">
-          <div class="section-label">Historial de cotizaciones</div>
-          <div id="historyList"></div>
-        </div>
-      </div>
+                <section class="panel">
+                  <div class="panel-head"><h2>02. Promoción del día</h2></div>
+                  <div class="promo-row">
+                    <label for="promoInput">Descuento extra</label>
+                    <div class="promo-field">
+                      <input type="number" id="promoInput" min="0" max="${MAX}" step="any" inputmode="decimal" aria-describedby="promoError promoHelp">
+                      <span class="muted-pct" aria-hidden="true">%</span>
+                    </div>
+                  </div>
+                  <div class="field-error" id="promoError" role="alert"></div>
+                  <p class="footnote" id="promoHelp">Se aplica sobre el total ya calculado de cada duración, solo para esta cotización.</p>
+                </section>
+              </div>
 
-      <footer class="app-footer">
-        Versión ${version} · Catálogo ${catalog.catalogVersion} (${catalog.updatedAt || ''})${legacyUrl ? html` · <a href="${legacyUrl}">Usar la versión anterior</a>` : ''}
-      </footer>`);
+              <aside class="summary" id="summary" aria-label="Resumen de cotización">
+                <button type="button" class="sum-bar" data-act="sheet" aria-expanded="false" aria-controls="sumBody" id="sumBar"></button>
+                <div class="sum-body" id="sumBody">
+                  <div class="sum-head">
+                    <h2>03. Resumen de cotización</h2>
+                    <button type="button" class="icon-btn sum-close" data-act="sheet" aria-label="Cerrar resumen">${Icon.chevronDown()}</button>
+                  </div>
+                  <div class="ticket-name" id="ticketName"></div>
+                  <div class="ticket-sub" id="ticketSub"></div>
+                  <div class="ticket-body" id="ticketBody"></div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="view" id="view-combos" hidden>
+            <div class="page-head"><h1>Combos guardados</h1><p>Guarda el combo que tienes armado y vuelve a usarlo con los precios vigentes.</p></div>
+            <section class="panel">
+              <div class="save-row">
+                <label class="sr-only" for="saveComboName">Nombre del combo</label>
+                <input type="text" id="saveComboName" class="text-field" placeholder="Nombre para el combo actual...">
+                <button type="button" class="btn" data-act="save-combo">Guardar combo actual</button>
+              </div>
+              <div class="field-error" id="saveComboError" role="alert"></div>
+              <div id="savedCombosList" class="list"></div>
+            </section>
+          </section>
+
+          <section class="view" id="view-historial" hidden>
+            <div class="page-head"><h1>Historial</h1><p>Las últimas ${String(MAX_HISTORY)} cotizaciones que copiaste o enviaste, con el texto exacto.</p></div>
+            <section class="panel"><div id="historyList" class="list"></div></section>
+          </section>
+
+          <section class="view" id="view-datos" hidden>
+            <div class="page-head"><h1>Datos y respaldo</h1><p>Tus combos e historial se guardan solo en este navegador. Exporta un respaldo si vas a cambiar de dispositivo.</p></div>
+            <section class="panel">
+              <div class="btn-row">
+                <button type="button" class="btn" data-act="export">Exportar respaldo</button>
+                <button type="button" class="btn secondary" data-act="import">Importar respaldo</button>
+                <button type="button" class="btn secondary danger-btn" data-act="reset-all">Restablecer todo</button>
+              </div>
+              <input type="file" id="importFile" accept=".json,application/json" class="hidden-input">
+            </section>
+          </section>
+
+          <footer class="app-footer">
+            Versión ${version} · Catálogo ${catalog.catalogVersion} (${catalog.updatedAt || ''})${legacyUrl ? html` · <a href="${legacyUrl}">Usar la versión anterior</a>` : ''}
+          </footer>
+        </main>
+      </div>`);
+    applyTheme();
   }
 
   // ---------- Renderizado por partes ----------
+  function renderNav() {
+    const el = doc.getElementById('sidenav');
+    setHTML(el, html`${NAV.map(n => html`
+      <button type="button" class="nav-item ${view === n.id ? 'active' : ''}" data-act="nav" data-view="${n.id}" ${view === n.id ? html`aria-current="page"` : ''}>
+        ${n.icon()}<span class="nav-label">${n.label}</span>${n.count ? html`<span class="nav-count">${String(n.count())}</span>` : ''}
+      </button>`)}`);
+    for (const n of NAV) {
+      const sec = doc.getElementById('view-' + n.id);
+      if (sec) { if (n.id === view) sec.removeAttribute('hidden'); else sec.setAttribute('hidden', ''); }
+    }
+  }
+
   function renderNotices() {
     const el = doc.getElementById('notices');
     if (!el) return;
-    setHTML(el, html`${notices.map(n => html`
-      <div class="notice ${n.kind === 'warn' ? 'warn' : n.kind === 'error' ? 'error' : ''}" data-notice="${n.id}">
-        <div class="notice-title">${n.title}</div>
-        <div>${n.body}</div>
-        ${n.actions && n.actions.length ? html`<div class="btn-row">${n.actions.map((a, i) => html`<button class="btn small ${i ? 'secondary' : ''}" data-act="${a.id}">${a.label}</button>`)}</div>` : ''}
-      </div>`)}`);
+    setHTML(el, html`${notices.map(n => Notification(n))}`);
   }
 
+  const cardCache = { ids: null, html: [] };
   function renderList() {
     const el = doc.getElementById('platformList');
     const term = search.trim().toLowerCase();
     const list = term ? P.filter(p => p.name.toLowerCase().includes(term) || p.id.toLowerCase().includes(term)) : P;
+    const count = P.filter(p => state.selection[p.id] && state.selection[p.id].selected).length;
+    doc.getElementById('selCount').textContent = count === 1 ? '1 seleccionada' : `${count} seleccionadas`;
     if (list.length === 0) { setHTML(el, html`<div class="empty-mini">No se encontraron plataformas con ese nombre.</div>`); return; }
-    setHTML(el, html`${list.map(p => {
+    const cards = list.map(p => {
       const s = sel(p.id);
-      const open = openPrices.has(p.id);
       const durs = pricing.ALL_DURATIONS.filter(d => p.table[d] !== undefined);
-      return html`
-      <div class="item ${s.selected ? 'checked' : ''}">
-        <div class="item-row">
-          <input type="checkbox" id="chk-${p.id}" data-id="${p.id}" ${s.selected ? html`checked` : ''}>
-          <label class="item-name" for="chk-${p.id}">${p.name}${p.badge ? html`<span class="badge">${p.badge}</span>` : ''}</label>
-          <div class="stepper">
-            <button data-act="dec" data-id="${p.id}" aria-label="Quitar un dispositivo a ${p.name}">−</button>
-            <span aria-label="Dispositivos">${s.devices}</span>
-            <button data-act="inc" data-id="${p.id}" aria-label="Agregar un dispositivo a ${p.name}">+</button>
-          </div>
-          <button class="icon-btn" data-act="prices" data-id="${p.id}" aria-expanded="${open ? 'true' : 'false'}" title="Ver precios">$</button>
-        </div>
-        <div class="edit-panel ${open ? 'open' : ''}">
-          ${durs.map(d => html`<div class="price-chip"><span>${pricing.durLabel(d)}</span><strong>${pricing.fmt(p.table[d])}</strong></div>`)}
-        </div>
-      </div>`;
-    })}`);
+      return PlatformCard({
+        p, selected: s.selected, devices: s.devices,
+        unit: p.id === 'netflix' ? 'Perfiles' : 'Dispositivos',
+        from: p.table[1] !== undefined ? `Desde ${pricing.fmt(p.table[1])} / mes` : `Desde ${pricing.fmt(p.table[durs[0]])} / ${pricing.durLabel(durs[0])}`,
+        pricesOpen: openPrices.has(p.id),
+        priceChips: durs.map(d => PriceChip({ label: pricing.durLabel(d), value: pricing.fmt(p.table[d]) }))
+      });
+    });
+    // Solo se redibujan las tarjetas que cambiaron (más rápido y no pierde el foco del teclado).
+    const ids = list.map(p => p.id).join('|');
+    if (cardCache.ids !== ids || el.children.length !== cards.length) {
+      setHTML(el, html`${cards}`);
+      cardCache.ids = ids; cardCache.html = cards.map(String);
+      return;
+    }
+    cards.forEach((c, i) => {
+      const str = String(c);
+      if (cardCache.html[i] === str) return;
+      const holder = doc.createElement('div');
+      setHTML(holder, c);
+      const fresh = holder.firstElementChild;
+      const focusedId = doc.activeElement && el.children[i].contains(doc.activeElement) ? (doc.activeElement.id || null) : null;
+      const focusedAct = !focusedId && doc.activeElement && el.children[i].contains(doc.activeElement) ? doc.activeElement.dataset.act : null;
+      el.replaceChild(fresh, el.children[i]);
+      cardCache.html[i] = str;
+      if (focusedId) { const f = doc.getElementById(focusedId); f && f.focus(); }
+      else if (focusedAct) { const f = fresh.querySelector(`[data-act="${focusedAct}"]`); f && f.focus(); }
+    });
   }
 
   function renderPromo() {
@@ -225,67 +300,74 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
     const nameEl = doc.getElementById('ticketName');
     const subEl = doc.getElementById('ticketSub');
     const bodyEl = doc.getElementById('ticketBody');
+    const bar = doc.getElementById('sumBar');
+    const summary = doc.getElementById('summary');
+    summary.classList.toggle('open', sheetOpen);
+    bar.setAttribute('aria-expanded', sheetOpen ? 'true' : 'false');
     if (items.length === 0) {
       nameEl.textContent = 'Selecciona al menos una plataforma';
       subEl.textContent = '';
       setHTML(bodyEl, html`<div class="empty-state">El combo aparecerá aquí con sus precios reales por duración.</div>`);
+      setHTML(bar, html`<span class="sum-bar-empty">Marca plataformas para ver el total</span>`);
       return;
     }
     const q = currentQuote();
     const promo = state.promo.pct;
+    const hasPromo = promo > 0;
     nameEl.textContent = q.name;
-    subEl.textContent = promo > 0 ? `Promo activa: -${promo}%` : 'Sin promoción activa';
+    subEl.textContent = hasPromo ? `Promo activa: -${promo}%` : 'Sin promoción activa';
     const tag = devicesTag(items);
     const wa = 'https://wa.me/?text=' + encodeURIComponent(q.text);
+    const hl = q.rows.find(r => r.d === highlight) || q.rows[0];
+    setHTML(bar, hl ? html`
+      <span class="sum-bar-main">
+        <span class="sum-bar-label">Total · ${pricing.durLabel(hl.d)}${hasPromo ? ` · promo −${promo} %` : ''}</span>
+        <span class="sum-bar-price"><span class="sum-bar-final">${pricing.fmt(hl.final)}</span>${hasPromo ? html`<span class="total-orig">${pricing.fmt(hl.base)}</span>` : ''}</span>
+      </span>
+      <span class="sum-bar-toggle">${sheetOpen ? 'Ocultar' : 'Ver resumen'} ${sheetOpen ? Icon.chevronDown() : Icon.chevronUp()}</span>` : html`<span class="sum-bar-empty">Sin duraciones en común</span>`);
     setHTML(bodyEl, html`
       ${q.rows.length === 0 ? html`<div class="notice warn">Estas plataformas no comparten ninguna duración: ${items.filter(it => Object.keys(it.table).length === 1).map(it => it.name).join(', ') || 'revisa la selección'} limita el combo.</div>` : ''}
-      ${q.rows.map(r => html`
-        <div class="row-line">
-          <div class="dur">${pricing.durLabel(r.d)}</div>
-          <div class="price-cell">
-            ${promo > 0 ? html`<span class="orig">${pricing.fmt(r.base)}</span>` : ''}
-            <span class="final ${promo > 0 ? 'discounted' : ''}">${pricing.fmt(r.final)}</span>
-          </div>
-        </div>`)}
+      ${hl ? TotalHighlight({ label: pricing.durLabel(hl.d), final: pricing.fmt(hl.final), base: pricing.fmt(hl.base), hasPromo, promo }) : ''}
+      ${q.rows.length ? html`<div class="rows-label">Todas las duraciones (van en el mensaje)</div>` : ''}
+      <div class="rows">${q.rows.map(r => DurationRow({ d: r.d, label: pricing.durLabel(r.d), base: pricing.fmt(r.base), final: pricing.fmt(r.final), hasPromo, active: hl && r.d === hl.d }))}</div>
       ${tag ? html`<div class="devices-tag">${tag}</div>` : ''}
-      <div class="copy-block"><pre id="copyText">${q.text}</pre></div>
+      <details class="msg-box" open>
+        <summary>Mensaje para el cliente</summary>
+        <div class="copy-block"><pre id="copyText">${q.text}</pre></div>
+      </details>
       <div class="copy-help" id="copyHelp">${lastCopyFailed ? 'No se pudo copiar automáticamente: selecciona el texto de arriba y cópialo manualmente.' : ''}</div>
-      <div class="btn-row">
-        <button class="btn" data-act="copy">Copiar para enviar</button>
-        <a class="btn secondary" id="waLink" data-act="whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer">Enviar por WhatsApp</a>
-        <button class="btn secondary" data-act="clear">Limpiar combo</button>
+      <div class="actions">
+        <button type="button" class="btn primary-lg" data-act="copy">${Icon.copy()}<span>Copiar cotización</span></button>
+        <a class="btn wa-btn" id="waLink" data-act="whatsapp" href="${wa}" target="_blank" rel="noopener noreferrer">${Icon.chat()}<span>Compartir por WhatsApp</span></a>
+        <div class="actions-row">
+          <button type="button" class="btn secondary" data-act="quick-save">Guardar combo</button>
+          <button type="button" class="btn secondary" data-act="clear">Limpiar</button>
+        </div>
       </div>`);
   }
 
   function renderCombos() {
     const el = doc.getElementById('savedCombosList');
     if (state.savedCombos.length === 0) { setHTML(el, html`<div class="empty-mini">Aún no has guardado ningún combo.</div>`); return; }
-    setHTML(el, html`${state.savedCombos.map(c => html`
-      <div class="list-row">
-        <div class="list-main">
-          <div class="list-title">${c.name}</div>
-          <div class="list-sub">${c.promoPct > 0 ? 'Promo -' + c.promoPct + '%' : 'Sin promo'}</div>
-        </div>
-        <button class="btn small secondary" data-act="use-combo" data-id="${c.id}">Usar</button>
-        <button class="icon-btn danger" data-act="del-combo" data-id="${c.id}" aria-label="Eliminar combo ${c.name}" title="Eliminar">✕</button>
-      </div>`)}`);
+    setHTML(el, html`${state.savedCombos.map(c => ListRow({
+      title: c.name,
+      sub: c.promoPct > 0 ? 'Promo -' + c.promoPct + '%' : 'Sin promo',
+      actions: html`<button type="button" class="btn small secondary" data-act="use-combo" data-id="${c.id}">Usar</button>
+        <button type="button" class="icon-btn danger" data-act="del-combo" data-id="${c.id}" aria-label="Eliminar combo ${c.name}" title="Eliminar">✕</button>`
+    }))}`);
   }
 
   function renderHistory() {
     const el = doc.getElementById('historyList');
     if (state.history.length === 0) { setHTML(el, html`<div class="empty-mini">Las cotizaciones que copies quedarán aquí.</div>`); return; }
-    setHTML(el, html`${state.history.map(h => html`
-      <div class="list-row">
-        <div class="list-main">
-          <div class="list-title">${h.name}</div>
-          <div class="list-sub">${h.ts}</div>
-        </div>
-        <button class="btn small secondary" data-act="copy-hist" data-id="${h.id}">Copiar</button>
-        <button class="icon-btn danger" data-act="del-hist" data-id="${h.id}" aria-label="Eliminar del historial" title="Eliminar">✕</button>
-      </div>`)}`);
+    setHTML(el, html`${state.history.map(h => ListRow({
+      title: h.name, sub: h.ts,
+      actions: html`<button type="button" class="btn small secondary" data-act="copy-hist" data-id="${h.id}">Copiar</button>
+        <button type="button" class="icon-btn danger" data-act="del-hist" data-id="${h.id}" aria-label="Eliminar del historial" title="Eliminar">✕</button>`
+    }))}`);
   }
 
-  function renderAll() { renderNotices(); renderList(); renderPromo(); renderTicket(); renderCombos(); renderHistory(); }
+  function renderAll() { renderNav(); renderNotices(); renderList(); renderPromo(); renderTicket(); renderCombos(); renderHistory(); }
   const afterChange = () => { persist(); renderList(); renderPromo(); renderTicket(); };
 
   // ---------- Acciones ----------
@@ -306,6 +388,11 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
     const act = t.dataset.act, id = t.dataset.id;
     if (act.startsWith('dismiss:')) { removeNotice(act.slice(8)); return; }
     switch (act) {
+      case 'theme': theme = theme === 'dark' ? 'light' : 'dark'; if (storage.writeTheme) storage.writeTheme(theme); applyTheme(); break;
+      case 'nav': view = t.dataset.view; sheetOpen = false; renderNav(); renderTicket(); win.scrollTo && win.scrollTo(0, 0); break;
+      case 'highlight': highlight = Number(t.dataset.d); renderTicket(); break;
+      case 'sheet': sheetOpen = !sheetOpen; renderTicket(); break;
+      case 'quick-save': view = 'combos'; renderNav(); { const inp = doc.getElementById('saveComboName'); inp && inp.focus && inp.focus(); } break;
       case 'inc': case 'dec': {
         const s = sel(id);
         s.devices = act === 'inc' ? Math.min(s.devices + 1, MAX_DEVICES) : Math.max(s.devices - 1, 1);
@@ -317,12 +404,12 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
         const q = currentQuote();
         const ok = await copyText(win, q.text);
         lastCopyFailed = !ok;
-        if (ok) { addHistory(q); persist(); toast('Copiado ✓'); renderHistory(); }
+        if (ok) { addHistory(q); persist(); toast('Cotización copiada ✓'); renderHistory(); renderNav(); }
         renderTicket();
         if (!ok) selectCopyText();
         break;
       }
-      case 'whatsapp': { const q = currentQuote(); addHistory(q); persist(); renderHistory(); break; }
+      case 'whatsapp': { const q = currentQuote(); addHistory(q); persist(); renderHistory(); renderNav(); toast('Abriendo WhatsApp…'); break; }
       case 'clear':
         Object.keys(state.selection).forEach(k => { state.selection[k].selected = false; });
         setPromo(0); afterChange(); break;
@@ -335,7 +422,7 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
         const name = input.value.trim() || pricing.comboName(items, state.selection);
         state.savedCombos.unshift({ id: newId('combo'), name, selection: JSON.parse(JSON.stringify(state.selection)), promoPct: state.promo.pct });
         input.value = '';
-        persist(); renderCombos(); toast('Combo guardado ✓'); break;
+        persist(); renderCombos(); renderNav(); toast('Combo guardado ✓'); break;
       }
       case 'use-combo': {
         const c = state.savedCombos.find(x => x.id === id);
@@ -348,7 +435,7 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
         const c = state.savedCombos.find(x => x.id === id);
         if (!c || !win.confirm(`¿Eliminar el combo guardado "${c.name}"?`)) break;
         state.savedCombos = state.savedCombos.filter(x => x.id !== id);
-        persist(); renderCombos(); break;
+        persist(); renderCombos(); renderNav(); break;
       }
       case 'copy-hist': {
         const h = state.history.find(x => x.id === id);
@@ -359,7 +446,7 @@ export function createApp({ win, root, catalog, storage, version, legacyUrl = nu
       case 'del-hist':
         if (!win.confirm('¿Eliminar esta cotización del historial?')) break;
         state.history = state.history.filter(x => x.id !== id);
-        persist(); renderHistory(); break;
+        persist(); renderHistory(); renderNav(); break;
       case 'export':
         downloadJson(win, buildBackup(state, catalog, now()), `respaldo-combos-${localDate(now())}.json`);
         toast('Respaldo descargado ✓'); break;
