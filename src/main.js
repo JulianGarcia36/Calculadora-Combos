@@ -3,7 +3,7 @@ import { createApp } from './ui/app.js';
 import { createStorage } from './adapters/storage.js';
 import { validateCatalog } from './domain/catalog.js';
 
-export const VERSION = '6.0.0';
+export const VERSION = '6.1.0';
 
 function showFatal(root, title, lines) {
   root.textContent = '';
@@ -37,7 +37,13 @@ async function start() {
     showFatal(root, 'El catálogo de precios tiene errores; avisa al administrador', v.errors);
     return;
   }
-  createApp({ win: window, root, catalog, storage: createStorage(window), version: VERSION, legacyUrl });
+  // Mudanza: en la dirección antigua (github.io) se avisa a dónde se mudó la calculadora.
+  let moveTo = null;
+  try {
+    const cfg = await (await fetch(new URL('../config/sitio.json', import.meta.url), { cache: 'no-cache' })).json();
+    if (location.hostname.endsWith('github.io') && typeof cfg.direccionNueva === 'string' && /^https:\/\//.test(cfg.direccionNueva)) moveTo = cfg.direccionNueva;
+  } catch { /* sin configuración: no hay mudanza */ }
+  createApp({ win: window, root, catalog, storage: createStorage(window), version: VERSION, legacyUrl, moveTo });
 }
 
 start();

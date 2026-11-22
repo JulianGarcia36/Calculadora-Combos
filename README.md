@@ -23,6 +23,17 @@ La versión 6 trae automáticamente los datos de la versión 5 la primera vez qu
 
 Si cambias un precio sin subir `catalogVersion`, las pruebas fallan y te lo dicen. Los tramos de descuento y el máximo de 25 % también están en `catalog.json`, pero cambiarlos exige actualizar la prueba que los fija (es una decisión de negocio).
 
+## Acceso privado (Cloudflare Pages)
+El sitio se publica en Cloudflare Pages con **una sola clave compartida** para todos los vendedores (no se les pide correo). La pide `functions/_middleware.js` antes de entregar cualquier archivo, incluido el catálogo de precios.
+
+- La clave se guarda en Cloudflare como variable secreta `CLAVE_VENDEDORES` (mínimo 8 caracteres). **Nunca** se escribe en el repositorio.
+- Cada vendedor la escribe una vez; el navegador la recuerda 30 días.
+- Para quitarle el acceso a alguien: cambia la clave en Cloudflare y comparte la nueva con los demás. Todos tendrán que volver a escribirla.
+- `/salir` cierra la sesión en ese navegador.
+- Las carpetas `equivalencia/`, `functions/` y `.github/` no se publican.
+
+Mudanza desde github.io: escribe la dirección nueva en `config/sitio.json` (`"direccionNueva": "https://…pages.dev/"`). La página antigua mostrará a cada vendedor cómo exportar sus datos y abrirlos en la nueva.
+
 ## Datos
 Combos guardados e historial se guardan solo en el navegador de cada persona. Usa **Exportar respaldo** e **Importar respaldo** para pasarlos a otro navegador. La versión 6 importa respaldos de la versión 5.
 

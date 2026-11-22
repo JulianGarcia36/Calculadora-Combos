@@ -1,5 +1,10 @@
 # Cambios
 
+## 6.1.0 — 22 nov 2026
+- Acceso privado con una sola clave compartida (Cloudflare Pages Functions), sin correos.
+- Aviso de mudanza en la dirección antigua (`config/sitio.json`).
+- Las carpetas internas (pruebas, funciones, workflows) no se publican en el sitio nuevo.
+
 ## 6.0.0 — 22 nov 2026
 - La versión 6 pasa a la dirección principal; la versión 5 queda congelada en `/legacy/` con aviso.
 - `/v6/` redirige a la principal.
