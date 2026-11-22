@@ -1,11 +1,16 @@
 {
-  "name": "calculadora-combos-equivalencia",
+  "name": "calculadora-combos-pruebas",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "golden": "node tools/generate-golden.cjs .. tests/golden/golden-master-v5.json"
+    "golden": "node tools/generate-golden.cjs .. tests/golden/golden-master-v5.json",
+    "informe": "node tools/informe-precios.mjs"
   },
-  "devDependencies": { "jsdom": "^24.0.0" }
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  }
 }

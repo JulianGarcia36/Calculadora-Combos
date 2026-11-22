@@ -11,8 +11,15 @@ jobs:
         working-directory: equivalencia
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm ci
+      - name: Informe de precios
+        if: github.event_name == 'pull_request'
+        run: |
+          git show "origin/${{ github.base_ref }}:catalog/catalog.json" > /tmp/base.json 2>/dev/null || echo '{}' > /tmp/base.json
+          node tools/informe-precios.mjs /tmp/base.json ../catalog/catalog.json >> "$GITHUB_STEP_SUMMARY"
       - run: npm test

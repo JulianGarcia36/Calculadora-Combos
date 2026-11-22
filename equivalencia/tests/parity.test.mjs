@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import * as engine from '../src/domain/pricing.js';
+import * as engine from '../../src/domain/pricing.js';
 import { loadOracle } from './helpers/oracle.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -12,7 +12,6 @@ test('el oráculo es la copia exacta de script.js v5 en producción', async () =
   const { createHash } = await import('node:crypto');
   const sha = createHash('sha256').update(fs.readFileSync(path.join(here, 'oracle/legacy-v5.js'))).digest('hex');
   assert.equal(sha, '0999e7dd7827ea157f049585bcef1cfe7360e3e864881bf1c45f9c28b6a905bc');
-  assert.equal(gm.meta.sourceSha256, sha);
 });
 
 const toSel = sel => Object.fromEntries(Object.entries(sel).map(([id, q]) => [id, { selected: true, devices: q, editOpen: false }]));

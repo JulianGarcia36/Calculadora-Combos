@@ -1,20 +1,17 @@
-# Red de equivalencia de precios — prueba de concepto (SPEC-00 / SPEC-08)
+# Pruebas automáticas
 
-Comprueba que un motor de cálculo nuevo produce **exactamente** los mismos precios y textos que
-`script.js` v5 en producción (SHA-256 0999e7dd7827ea157f049585bcef1cfe7360e3e864881bf1c45f9c28b6a905bc).
+Se ejecutan solas en GitHub Actions en cada pull request (check **equivalencia**). Para correrlas en tu computador: `npm ci` y luego `npm test` (≈ 2 minutos).
 
-## Contenido
-- `src/domain/pricing.js` — motor puro (estrategia "v5-round5"), expresiones copiadas literalmente de v5.
-- `tests/oracle/legacy-v5.js` — copia byte a byte de `script.js` v5. NO MODIFICAR.
-- `tests/golden/golden-master-v5.json` — 1.080 precios unitarios + 3.920 cotizaciones generadas con v5.
-- `tests/parity.test.mjs` — 4 pruebas: golden de precios, golden de cotizaciones, diferencial aleatorio contra el oráculo, barrido exhaustivo del descuento (540.090 casos).
-- `tools/generate-golden.cjs` — regenera el golden master desde una carpeta con index.html + script.js.
+| Archivo | Qué protege |
+| --- | --- |
+| `tests/parity.test.mjs` | El motor `src/domain/pricing.js` calcula exactamente igual que la versión 5 original: golden master (1.080 precios + 3.920 cotizaciones), 20.000 casos aleatorios contra el oráculo y 540.090 combinaciones de descuento |
+| `tests/produccion.test.mjs` | El `script.js` publicado en la raíz: sus precios son los registrados y sus reglas de cálculo no cambiaron |
+| `tests/v6.test.mjs` | La versión 6 de punta a punta: la pantalla produce el mismo texto que el golden master, reglas DEC-01 a DEC-04, migración desde v5, vuelta a la versión anterior, datos dañados, importación y seguridad |
 
-## Uso
-    npm install
-    npm test                    # ~3 s
-    CASES=100000 npm test       # más casos aleatorios
-    SEED=123 npm test           # otra semilla
+Otros archivos:
+- `tests/oracle/legacy-v5.js` — copia congelada de `script.js` v5 (SHA-256 0999e7dd…). **No modificar.**
+- `tests/golden/golden-master-v5.json` — resultados de referencia. Se regenera con `npm run golden` solo cuando el administrador cambia precios.
+- `tools/informe-precios.mjs` — informe de qué precios cambian en un pull request.
+- `tools/generate-golden.cjs` — generador del golden master.
 
-Para regenerar el golden master (solo con aprobación del negocio):
-    node tools/generate-golden.cjs <carpeta con index.html y script.js> tests/golden/golden-master-v5.json
+Variables opcionales: `CASES=100000` (más casos aleatorios), `SEED=123` (otra semilla), `CASES_PROD=20000`.
