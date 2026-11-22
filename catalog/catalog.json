@@ -1,0 +1,246 @@
+{
+  "schema": "calculadora-combos/catalogo@1",
+  "catalogVersion": "2026.11.22-1",
+  "updatedAt": "2026-11-22",
+  "maxDiscountPct": 25,
+  "discountTiers": [
+    {
+      "minPlatforms": 2,
+      "pct": 5
+    },
+    {
+      "minPlatforms": 3,
+      "pct": 10
+    },
+    {
+      "minPlatforms": 4,
+      "pct": 15
+    },
+    {
+      "minPlatforms": 5,
+      "pct": 20
+    },
+    {
+      "minPlatforms": 6,
+      "pct": 25
+    }
+  ],
+  "platforms": [
+    {
+      "id": "crunchy",
+      "name": "CR∪NCH¥R0££",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "deezer",
+      "name": "D€€Z€R M∪$!C",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "prime",
+      "name": "ΔMΔZØN ₱R!M€ V!D€Ø",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "hbomax",
+      "name": "Hß0-₥ΔX",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "iptv",
+      "name": "!₽TV",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520,
+        "24": 1000
+      }
+    },
+    {
+      "id": "plex",
+      "name": "₱L€X",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "paramount",
+      "name": "P₳R₳MØ∪N₮✚",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "vix",
+      "name": "V!X PREMIUM",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "universal",
+      "name": "∪N!V€R$₳Ⱡ",
+      "baseDevices": 1,
+      "table": {
+        "1": 50,
+        "2": 95,
+        "3": 140,
+        "6": 270,
+        "12": 520
+      }
+    },
+    {
+      "id": "youtube",
+      "name": "¥Ø∪₮∪฿€ PREMIUM",
+      "baseDevices": 1,
+      "table": {
+        "1": 65
+      },
+      "badge": "SOLO 1 MES"
+    },
+    {
+      "id": "disney",
+      "name": "D1sn3y✚",
+      "baseDevices": 1,
+      "table": {
+        "1": 70,
+        "2": 130,
+        "3": 190,
+        "6": 380,
+        "12": 740
+      }
+    },
+    {
+      "id": "disneyespn",
+      "name": "D1sn3y✚ + 3SPN",
+      "baseDevices": 1,
+      "table": {
+        "1": 90,
+        "2": 170,
+        "3": 245,
+        "6": 490,
+        "12": 950
+      }
+    },
+    {
+      "id": "netflix",
+      "name": "N3T₣L!X PREMIUM",
+      "baseDevices": 1,
+      "table": {
+        "1": 80,
+        "2": 150,
+        "3": 215,
+        "6": 415,
+        "12": 810
+      }
+    },
+    {
+      "id": "gemini",
+      "name": "₲€₥!₦!",
+      "baseDevices": 1,
+      "table": {
+        "1": 120,
+        "2": 230,
+        "3": 340,
+        "6": 670,
+        "12": 1300
+      },
+      "badge": "SE ACTIVA CON TU CORREO"
+    },
+    {
+      "id": "canva",
+      "name": "C₳NV₳",
+      "baseDevices": 1,
+      "table": {
+        "1": 70,
+        "2": 130,
+        "3": 190,
+        "6": 380,
+        "12": 740
+      }
+    },
+    {
+      "id": "spotify",
+      "name": "$P0T!₣¥ Premium",
+      "baseDevices": 1,
+      "table": {
+        "1": 80,
+        "2": 135,
+        "3": 175,
+        "6": 330,
+        "12": 640
+      }
+    },
+    {
+      "id": "appletv",
+      "name": "₳₱₱ⱠɆ ₮V",
+      "baseDevices": 1,
+      "table": {
+        "1": 60,
+        "2": 110,
+        "3": 165,
+        "6": 330,
+        "12": 600
+      }
+    },
+    {
+      "id": "magis",
+      "name": "MΔG!$ ₸V (₣L∪JØ ₸V)",
+      "baseDevices": 1,
+      "table": {
+        "1": 120,
+        "2": 230,
+        "3": 340,
+        "6": 670,
+        "12": 1300
+      },
+      "badge": "POR ENCARGO"
+    }
+  ]
+}
