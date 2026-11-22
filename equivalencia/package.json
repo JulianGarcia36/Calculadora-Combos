@@ -1,0 +1,11 @@
+{
+  "name": "calculadora-combos-equivalencia",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "golden": "node tools/generate-golden.cjs .. tests/golden/golden-master-v5.json"
+  },
+  "devDependencies": { "jsdom": "^24.0.0" }
+}
