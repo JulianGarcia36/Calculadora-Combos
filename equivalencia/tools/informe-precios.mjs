@@ -23,7 +23,8 @@ else {
     }
   }
   if (base.maxDiscountPct !== next.maxDiscountPct) rows.push(`| (descuento máximo) | | ${base.maxDiscountPct} % | ${next.maxDiscountPct} % |`);
-  if (JSON.stringify(base.discountTiers) !== JSON.stringify(next.discountTiers)) rows.push(`| (tramos de descuento) | | ${base.discountTiers.map(t => t.minPlatforms + '→' + t.pct + '%').join(' ')} | ${next.discountTiers.map(t => t.minPlatforms + '→' + t.pct + '%').join(' ')} |`);
+  const tramos = c => (Array.isArray(c.discountTiers) && c.discountTiers.length ? c.discountTiers.map(t => t.minPlatforms + '→' + t.pct + '%').join(' ') : 'sin tramos');
+  if (tramos(base) !== tramos(next)) rows.push(`| (tramos de descuento) | | ${tramos(base)} | ${tramos(next)} |`);
   if (rows.length === 0) out.push('Este cambio **no modifica ningún precio**.');
   else out.push(`Este cambio modifica **${rows.length}** valores del catálogo (${base.catalogVersion} → ${next.catalogVersion}):`, '', '| Plataforma | Qué cambia | Antes | Después |', '| --- | --- | --- | --- |', ...rows);
 }

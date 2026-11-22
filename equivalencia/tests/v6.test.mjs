@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bootV6, bootV5, fire, click, tick, catalog as officialCatalog, testCatalog as catalog } from './helpers/entornos.mjs';
 import { validateCatalog } from '../../src/domain/catalog.js';
-import { suggestedDiscount, validatePromo } from '../../src/domain/discounts.js';
+import { validatePromo } from '../../src/domain/discounts.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const gm = JSON.parse(fs.readFileSync(path.join(here, 'golden/golden-master-v5.json'), 'utf8'));
@@ -39,11 +39,9 @@ function typePromo(env, value) {
 const copyTextOf = env => env.doc.getElementById('copyText').textContent;
 
 // ---------- catálogo y reglas nuevas ----------
-test('catálogo oficial válido, con los tramos y el máximo decididos (DEC-02, DEC-03)', () => {
+test('catálogo oficial válido, con el máximo decidido (DEC-03)', () => {
   assert.deepEqual(validateCatalog(officialCatalog), { ok: true, errors: [] });
   assert.equal(officialCatalog.maxDiscountPct, 25);
-  assert.deepEqual(officialCatalog.discountTiers.map(t => [t.minPlatforms, t.pct]), [[2, 5], [3, 10], [4, 15], [5, 20], [6, 25]]);
-  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 9].map(n => suggestedDiscount(catalog.discountTiers, n)), [0, 0, 5, 10, 15, 20, 25, 25]);
   assert.deepEqual(validatePromo('25', 25), { ok: true, value: 25 });
   assert.deepEqual(validatePromo('12,5', 25), { ok: true, value: 12.5 });
   assert.deepEqual(validatePromo('', 25), { ok: true, value: 0 });
@@ -91,16 +89,15 @@ test('DEC-03: un descuento mayor a 25 % se rechaza y la cotización conserva el 
   assert.match(env.doc.getElementById('promoError').textContent, /negativo/);
 });
 
-test('DEC-02: la calculadora sugiere el tramo y el vendedor decide si lo aplica', () => {
+test('el descuento se escribe a mano como en la versión 5, sin tramos sugeridos', () => {
   const env = bootV6();
   setSelection(env, { netflix: 1, disney: 1, vix: 1 });
-  assert.match(env.doc.getElementById('promoHint').textContent, /3 plataformas: 10 %/);
-  assert.equal(env.app.getState().promo.pct, 0, 'no se aplica solo');
-  click(env.win, env.doc.querySelector('[data-act="apply-tier"]'));
-  assert.equal(env.app.getState().promo.pct, 10);
-  assert.match(env.doc.getElementById('promoBanner').textContent, /Descuento activo: 10 %/);
-  click(env.win, env.doc.querySelector('[data-act="clear-promo"]'));
+  assert.equal(env.doc.querySelectorAll('#promoHint, #promoBanner, [data-act="apply-tier"]').length, 0);
+  assert.equal(env.doc.getElementById('promoHelp').textContent, 'Se aplica sobre el total ya calculado de cada duración, solo para esta cotización.');
+  assert.doesNotMatch(env.doc.body.textContent, /Tramo|Tramos/);
   assert.equal(env.app.getState().promo.pct, 0);
+  typePromo(env, 10);
+  assert.equal(env.doc.getElementById('ticketSub').textContent, 'Promo activa: -10%');
 });
 
 test('DEC-04: la v6 no crea combos de ejemplo', () => {

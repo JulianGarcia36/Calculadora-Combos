@@ -1,5 +1,9 @@
 # Cambios
 
+## 6.1.1 — 22 nov 2026
+- El descuento vuelve a funcionar como en la versión 5: sección «Promoción del día», el vendedor lo escribe a mano.
+- Se quitan los tramos sugeridos, su texto explicativo y la franja de «Descuento activo». Se mantiene el máximo de 25 %.
+
 ## 6.1.0 — 22 nov 2026
 - Acceso privado con una sola clave compartida (Cloudflare Pages Functions), sin correos.
 - Aviso de mudanza en la dirección antigua (`config/sitio.json`).
