@@ -1,5 +1,11 @@
 # Cambios
 
+## 6.0.0 — 22 nov 2026
+- La versión 6 pasa a la dirección principal; la versión 5 queda congelada en `/legacy/` con aviso.
+- `/v6/` redirige a la principal.
+- Cambiar un precio ahora solo requiere editar `catalog/catalog.json` (y subir `catalogVersion`).
+- Las pruebas de la interfaz usan precios fijos de referencia, así que un cambio de precio no las rompe.
+
 ## 6.0.0-piloto — 22 nov 2026
 - Nueva versión en `/v6/` (la raíz sigue en la versión 5).
 - Precios oficiales en `catalog/catalog.json`; los vendedores ya no pueden editarlos ni agregar plataformas (DEC-01).

@@ -4,31 +4,32 @@ Herramienta interna para armar y cotizar combos de plataformas, generar el texto
 
 ## Versiones publicadas
 
-| Dirección | Versión | Estado |
+| Dirección | Versión | Para qué |
 | --- | --- | --- |
-| `/` (raíz) | 5 (`index.html`, `script.js`, `style.css`) | La que usan hoy los vendedores |
-| `/v6/` | 6 (`v6/index.html` + `src/` + `catalog/`) | Piloto. Precios oficiales, descuento máximo 25 %, sin combos de ejemplo |
+| `/` (raíz) | 6 (`index.html` + `src/` + `catalog/` + `assets/`) | La calculadora que usan los vendedores |
+| `/legacy/` | 5, congelada | Solo para volver atrás si la nueva falla. Muestra un aviso, y si el catálogo cambia advierte en rojo que sus precios están desactualizados |
+| `/v6/` | — | Redirige a la raíz (enlaces del piloto) |
 
-La versión 6 lee automáticamente los datos de la versión 5 la primera vez que se abre (combos, historial y selección) y sigue escribiendo una copia compatible, así que se puede volver a la versión 5 sin perder nada.
+La versión 6 trae automáticamente los datos de la versión 5 la primera vez que se abre (combos, historial y selección) y sigue escribiendo una copia compatible, así que `/legacy/` muestra los mismos datos.
 
 ## Reglas comerciales (decididas el 22 nov 2026)
 - Los precios los define solo el administrador en `catalog/catalog.json` (los vendedores no pueden editarlos).
 - El vendedor escribe el descuento; máximo **25 %**. Tramos sugeridos: 2 plataformas 5 %, 3 = 10 %, 4 = 15 %, 5 = 20 %, 6 o más = 25 %.
 - El redondeo al múltiplo de 5 y el texto para el cliente son idénticos a la versión 5 (probado contra miles de casos).
 
-## Cómo cambiar un precio (mientras convivan v5 y v6)
-1. Crea una rama y edita **los tres lugares**: `catalog/catalog.json` (sube también `catalogVersion` y `updatedAt`), `DEFAULT_PLATFORMS` en `script.js` y, si es Crunchyroll, Paramount+, Netflix, Spotify o YouTube, el bloque correspondiente al final de `loadState()` en `script.js`.
-2. En la carpeta `equivalencia/`: `npm ci` y luego `npm run golden` (registra los precios nuevos como referencia).
-3. Abre un pull request. En la pestaña **Checks → Pruebas de precios → Summary** aparece el **Informe de precios** con lo que cambia. Si es lo que querías, haz merge.
+## Cómo cambiar un precio
+1. Crea una rama y edita solo `catalog/catalog.json`: el precio, y súbele `catalogVersion` (por ejemplo `2026.12.01-1`) y `updatedAt`.
+2. Abre un pull request. En **Checks → Pruebas de precios → Summary** aparece el **Informe de precios** con lo que cambia. Si es lo que querías, haz merge.
 
-Si olvidas uno de los tres lugares, las pruebas fallan y dicen cuál.
+Si cambias un precio sin subir `catalogVersion`, las pruebas fallan y te lo dicen. Los tramos de descuento y el máximo de 25 % también están en `catalog.json`, pero cambiarlos exige actualizar la prueba que los fija (es una decisión de negocio).
 
 ## Datos
 Combos guardados e historial se guardan solo en el navegador de cada persona. Usa **Exportar respaldo** e **Importar respaldo** para pasarlos a otro navegador. La versión 6 importa respaldos de la versión 5.
 
 ## Estructura
-- `index.html`, `style.css`, `script.js` — versión 5 (raíz)
-- `v6/index.html` — página de la versión 6
+- `index.html` — página principal (versión 6)
+- `legacy/` — versión 5 congelada (`index.html`, `style.css`, `script.js`, `aviso.js`)
+- `v6/index.html` — redirección a la raíz
 - `src/domain/` — reglas de cálculo y descuento (sin pantalla ni almacenamiento)
 - `src/state/` — formato de los datos y migración desde la versión 5
 - `src/adapters/` — almacenamiento, portapapeles y respaldos

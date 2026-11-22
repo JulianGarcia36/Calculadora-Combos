@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootV6, bootV5, fire, click, tick, catalog } from './helpers/entornos.mjs';
+import { bootV6, bootV5, fire, click, tick, catalog as officialCatalog, testCatalog as catalog } from './helpers/entornos.mjs';
 import { validateCatalog } from '../../src/domain/catalog.js';
 import { suggestedDiscount, validatePromo } from '../../src/domain/discounts.js';
 
@@ -40,19 +40,15 @@ const copyTextOf = env => env.doc.getElementById('copyText').textContent;
 
 // ---------- catálogo y reglas nuevas ----------
 test('catálogo oficial válido, con los tramos y el máximo decididos (DEC-02, DEC-03)', () => {
-  assert.deepEqual(validateCatalog(catalog), { ok: true, errors: [] });
-  assert.equal(catalog.maxDiscountPct, 25);
-  assert.deepEqual(catalog.discountTiers.map(t => [t.minPlatforms, t.pct]), [[2, 5], [3, 10], [4, 15], [5, 20], [6, 25]]);
+  assert.deepEqual(validateCatalog(officialCatalog), { ok: true, errors: [] });
+  assert.equal(officialCatalog.maxDiscountPct, 25);
+  assert.deepEqual(officialCatalog.discountTiers.map(t => [t.minPlatforms, t.pct]), [[2, 5], [3, 10], [4, 15], [5, 20], [6, 25]]);
   assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 9].map(n => suggestedDiscount(catalog.discountTiers, n)), [0, 0, 5, 10, 15, 20, 25, 25]);
   assert.deepEqual(validatePromo('25', 25), { ok: true, value: 25 });
   assert.deepEqual(validatePromo('12,5', 25), { ok: true, value: 12.5 });
   assert.deepEqual(validatePromo('', 25), { ok: true, value: 0 });
   assert.equal(validatePromo('26', 25).ok, false);
   assert.equal(validatePromo('-1', 25).ok, false);
-});
-
-test('el catálogo de la v6 es idéntico al catálogo efectivo de la v5 publicada (durante el piloto)', () => {
-  assert.deepEqual(catalog.platforms, gm.catalog);
 });
 
 // ---------- equivalencia de precios a través de la interfaz ----------

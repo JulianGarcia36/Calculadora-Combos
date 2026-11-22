@@ -3,7 +3,7 @@ import { createApp } from './ui/app.js';
 import { createStorage } from './adapters/storage.js';
 import { validateCatalog } from './domain/catalog.js';
 
-export const VERSION = '6.0.0-piloto';
+export const VERSION = '6.0.0';
 
 function showFatal(root, title, lines) {
   root.textContent = '';
