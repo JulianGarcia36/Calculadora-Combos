@@ -264,7 +264,8 @@ test('XSS: nombres con HTML en respaldos se muestran como texto', () => {
     savedCombos: [{ id: 'c1', name: '<img src=x onerror="window.__pwn=1">', selection: { vix: { selected: true, devices: 1 } }, promoPct: 0 }],
     history: [{ id: 'h1', ts: '<b id="x2">t</b>', name: '<svg onload=alert(1)>', text: 'ok' }]
   }));
-  assert.equal(env.doc.querySelectorAll('img, svg, #x2').length, 0);
+  assert.equal(env.doc.querySelectorAll('img, svg[onload], #x2').length, 0, 'ningún elemento inyectado');
+  assert.equal(env.win.__pwn, undefined);
   assert.match(env.doc.getElementById('savedCombosList').textContent, /<img src=x/);
   env.doc.getElementById('searchInput').value = '"><img src=x>';
   fire(env.win, env.doc.getElementById('searchInput'), 'input');

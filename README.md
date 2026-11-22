@@ -44,8 +44,8 @@ Combos guardados e historial se guardan solo en el navegador de cada persona. Us
 - `src/domain/` — reglas de cálculo y descuento (sin pantalla ni almacenamiento)
 - `src/state/` — formato de los datos y migración desde la versión 5
 - `src/adapters/` — almacenamiento, portapapeles y respaldos
-- `src/ui/` — pantalla (todo el texto se escapa: sin riesgo de inyección de HTML)
+- `src/ui/` — pantalla (todo el texto se escapa: sin riesgo de inyección de HTML); `components.js` tiene solo piezas visuales, sin cálculos
 - `catalog/catalog.json` — catálogo oficial de precios y descuento máximo
-- `assets/app.css` — estilos de la versión 6
+- `assets/app.css` — estilos (modo noche por defecto, modo día con `data-theme="light"`); cambiar colores aquí no toca precios
 - `equivalencia/` — pruebas automáticas (ver su README)
 - `robots.txt` — evita que buscadores indexen el sitio
